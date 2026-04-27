@@ -33,7 +33,7 @@ jobs:
       - name: Validate Deployment (Check Only)
         run: |
           sf project deploy start \
-            --check-only \
+            --dry-run \
             --target-org DevHub \
             --test-level RunLocalTests
 
