@@ -1,0 +1,51 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli
+
+      - name: Install PMD
+        run: |
+          wget https://github.com/pmd/pmd/releases/download/pmd_releases/7.0.0/pmd-bin-7.0.0.zip
+          unzip pmd-bin-7.0.0.zip
+
+      - name: Authenticate Org
+        run: |
+          echo "${{ secrets.SF_AUTH_URL }}" > auth.txt
+          sf org login sfdx-url --sfdx-url-file auth.txt --alias DevHub
+
+      - name: Validate Deployment (Check Only)
+        run: |
+          sf project deploy start \
+            --check-only \
+            --target-org DevHub \
+            --test-level RunLocalTests
+
+      - name: Run Apex Tests
+        run: |
+          sf apex run test \
+            --target-org DevHub \
+            --result-format human
+
+      - name: Run PMD Scan
+        run: |
+          ./pmd-bin-7.0.0/bin/pmd check \
+          -d force-app \
+          -R pmd/ruleset.xml \
+          -f text
