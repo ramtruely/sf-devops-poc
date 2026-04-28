@@ -65,4 +65,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: scanner-report
-          path: scanner-report.json    
+          path: scanner-report.json 
+
+      - name: Generate Graph
+        run: |
+          node generate-graph.js
+          dot -Tpng graph.dot -o graph.png
+
+      - name: Upload Graph
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-graph
+          path: graph.png   
