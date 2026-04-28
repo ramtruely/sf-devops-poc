@@ -67,6 +67,9 @@ jobs:
           name: scanner-report
           path: scanner-report.json 
 
+      - name: Install Graphviz
+        run: sudo apt-get update && sudo apt-get install -y graphviz    
+
       - name: Generate Graph
         run: |
           node generate-graph.js
