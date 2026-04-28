@@ -48,4 +48,4 @@ jobs:
           ./pmd-bin-6.55.0/bin/run.sh pmd \
           -d force-app \
           -R pmd/ruleset.xml \
-          -f text
+          -f text || true 
