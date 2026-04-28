@@ -50,3 +50,19 @@ jobs:
           -d force-app \
           -R pmd/ruleset.xml \
           -f text || true 
+
+      - name: Install Code Analyzer
+        run: sf plugins install @salesforce/sfdx-scanner
+
+      - name: Run Code Analysis
+        run: |
+          sf scanner run \
+          --target "force-app" \
+          --format json \
+          --outfile scanner-report.json 
+          
+      - name: Upload Scanner Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: scanner-report
+          path: scanner-report.json    
