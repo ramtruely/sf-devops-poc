@@ -124,7 +124,7 @@ jobs:
           sf project deploy start \
           --dry-run \
           --target-org DevHub \
-          --test-level RunLocalTests \
+          --test-level RunSpecifiedTests \
           --tests HelloWorldTest
 
       # -----------------------------
