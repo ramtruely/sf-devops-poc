@@ -121,7 +121,7 @@ jobs:
           --result-format human
           -- wait 10
       # -----------------------------
-      # Deployment Validation Process
+      # Deployment Validation
       # -----------------------------
       - name: Validate Deployment
         run: |
