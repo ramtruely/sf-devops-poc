@@ -119,6 +119,7 @@ jobs:
           sf apex run test \
           --target-org DevHub \
           --result-format human
+          -- wait 10
 
       # -----------------------------
       # Deployment Validation
@@ -129,7 +130,6 @@ jobs:
           --dry-run \
           --target-org DevHub \
           --test-level RunLocalTests \
-          --verbose
 
       # -----------------------------
       # Coverage Gate (Basic)
