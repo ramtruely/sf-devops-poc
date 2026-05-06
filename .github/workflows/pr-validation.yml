@@ -114,12 +114,8 @@ jobs:
       # -----------------------------
       # Apex Test + Coverage
       # -----------------------------
-      - name: SF Unit Test Gate
-        run: |
-          sf apex run test \
-          --target-org DevHub \
-          --result-format human \
-          -- wait 10
+      - name: Run Apex Tests
+        run: sf apex run test --target-org DevHub --result-format human --wait 10
       # -----------------------------
       # Deployment Validation
       # -----------------------------
