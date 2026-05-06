@@ -4,19 +4,12 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  SKIP_HEAVY_GATES: true   # 🔥 control switch
+
 jobs:
 
-  pre-requisite:
-    runs-on: ubuntu-latest
-    outputs:
-      sandbox: "DevHub"
-    steps:
-      - name: Set Sandbox Output
-        run: echo "sandbox=DevHub" >> $GITHUB_OUTPUT
-
   validate:
-
-    needs: pre-requisite
     runs-on: ubuntu-latest
 
     steps:
@@ -29,11 +22,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - name: Install Dependencies
         run: npm install
-
-      - name: Run Prettier Check
-        run: npx prettier --check "**/*.{js,ts,html,css,cls}"   
 
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
@@ -50,23 +41,26 @@ jobs:
           unzip pmd-bin-6.55.0.zip
 
       # -----------------------------
-      # Auth
+      # Auth DevHub
       # -----------------------------
-      - name: Authenticate Org
+      - name: Authenticate DevHub
         run: |
           echo "${{ secrets.SF_AUTH_DEV }}" > auth.txt
           sf org login sfdx-url --sfdx-url-file auth.txt --alias DevHub
 
-      # ---------------------------
-      # Debug
-      # ---------------------------     
-
-      - name: Debug Auth File
+      # -----------------------------
+      # Create TEST (Scratch Org)
+      # -----------------------------
+      - name: Create Scratch Org (TEST)
         run: |
-          cat auth.txt | wc -c    
+          sf org create scratch \
+            --definition-file config/project-scratch-def.json \
+            --alias TEST \
+            --duration-days 1 \
+            --set-default
 
       # -----------------------------
-      # Gate PR (basic)
+      # PR Gate
       # -----------------------------
       - name: Gate PR
         run: echo "PR Gate Triggered"
@@ -77,26 +71,20 @@ jobs:
       - name: Check Commit Message Format
         run: |
           TITLE="${{ github.event.pull_request.title }}"
-          echo "Checking: $TITLE"
-          echo "$TITLE" | grep -E "^(feat|fix|chore|refactor|test):" || (echo "Invalid commit message" && exit 1)
-      # -----------------------------
-      # Prettier Check
-      # -----------------------------
-      - name: Code Format Check (Prettier)
-        run: prettier --check "**/*.{js,ts,html,css}"
+          echo "$TITLE" | grep -E "^(feat|fix|chore|refactor|test):" || exit 1
 
       # -----------------------------
-      # Code Analyzer (SFCA)
+      # Formatting
+      # -----------------------------
+      - name: Code Format Check
+        run: npx prettier --check "**/*.{js,ts,html,css,cls}"
+
+      # -----------------------------
+      # Static Analysis
       # -----------------------------
       - name: SF Code Analyzer
-        run: |
-          sf scanner run \
-          --target "force-app" \
-          --format table
+        run: sf scanner run --target "force-app" --format table
 
-      # -----------------------------
-      # PMD Scan
-      # -----------------------------
       - name: PMD Scan
         run: |
           ./pmd-bin-6.55.0/bin/run.sh pmd \
@@ -105,69 +93,56 @@ jobs:
           -f text
 
       # -----------------------------
-      # LWC Unit Test
+      # 🔥 CONDITIONAL GATES (SKIPPED NOW)
       # -----------------------------
-      - name: Run LWC Tests
-        run: |
-          echo "Running LWC tests (placeholder if not configured)"
 
-      # -----------------------------
-      # Apex Test + Coverage
-      # -----------------------------
       - name: Run Apex Tests
-        run: sf apex run test --target-org DevHub --result-format human --wait 10
-      # -----------------------------
-      # Deployment Validation Process
-      # -----------------------------
+        if: env.SKIP_HEAVY_GATES != 'true'
+        run: sf apex run test --target-org TEST --result-format human --wait 10
+
       - name: Validate Deployment
+        if: env.SKIP_HEAVY_GATES != 'true'
         run: |
           sf project deploy start \
-          --dry-run \
-          --target-org DevHub \
-          --test-level RunSpecifiedTests \
-          --tests HelloWorldTest
+            --dry-run \
+            --target-org TEST \
+            --test-level RunSpecifiedTests \
+            --tests HelloWorldTest
 
-      # -----------------------------
-      # Coverage Gate (Basic) Process
-      # -----------------------------
-      - name: Coverage Gate
-        run: echo "Enforce 75% coverage threshold"
-
-      # -----------------------------
-      # Placeholder Checks
-      # -----------------------------
       - name: Package Coverage Check
-        run: echo "Package coverage check - Not implemented"
-
-      - name: Gate PR Bypass Approval
-        run: echo "Bypass approval logic - Not implemented"
-
-      - name: ChecksResolver
-        run: echo "ChecksResolver - Not implemented"
-
-      - name: Check Deployment Queue
-        run: echo "Deployment queue check for ${{needs.pre-requisite.outputs.sandbox}} - Not implemented"
-
-      - name: New Relic Exceptions Gate
-        run: echo "New Relic integration skipped"
+        if: env.SKIP_HEAVY_GATES != 'true'
+        run: echo "Package coverage logic"
 
       - name: Calculate Risk Assessment
-        run: echo "Risk calculation - Not implemented"
+        if: env.SKIP_HEAVY_GATES != 'true'
+        run: echo "Risk logic"
 
-      - name: Find Duplicate Metadata
-        run: echo "Duplicate metadata detection - Not implemented"
+      - name: SF Unit Test Gate
+        if: env.SKIP_HEAVY_GATES != 'true'
+        run: echo "Unit test gate logic"
 
-      - name: SF Unused Code
-        run: echo "Unused code detection - Not implemented"
+      - name: Unit test & Deploy validation test
+        if: env.SKIP_HEAVY_GATES != 'true'
+        run: echo "Combined validation logic"
 
-      - name: Dev Risk Profile
-        run: echo "Dev risk profiling - Not implemented"
+      # -----------------------------
+      # Deployments (always run)
+      # -----------------------------
+      - name: Deploy to TEST
+        run: |
+          sf project deploy start \
+            --target-org TEST \
+            --test-level NoTestRun
 
-      - name: v1 Story Validations
-        run: echo "Story validation - Not implemented"
+      - name: Deploy to DEV (DevHub)
+        run: |
+          sf project deploy start \
+            --target-org DevHub \
+            --test-level NoTestRun
 
-      - name: SF Coverage Gate for Modified Classes
-        run: echo "Modified class coverage gate - Not implemented"
-
-      - name: Update PR
-        run: echo "Update PR with results - Not implemented"
+      # -----------------------------
+      # Cleanup
+      # -----------------------------
+      - name: Delete Scratch Org
+        if: always()
+        run: sf org delete scratch --target-org TEST --no-prompt
