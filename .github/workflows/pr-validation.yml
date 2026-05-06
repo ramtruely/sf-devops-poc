@@ -29,6 +29,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Install Prettier + Apex Plugin
+        run: |
+          npm install -g prettier
+          npm install -g prettier-plugin-apex    
 
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
