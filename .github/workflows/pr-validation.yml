@@ -71,8 +71,9 @@ jobs:
       # -----------------------------
       - name: Check Commit Message Format
         run: |
-          echo "${{ github.event.pull_request.title }}" | grep -E "^(feat|fix|chore|refactor|test):" || (echo "Invalid commit message" && exit 1)
-
+          TITLE="${{ github.event.pull_request.title }}"
+          echo "Checking: $TITLE"
+          echo "$TITLE" | grep -E "^(feat|fix|chore|refactor|test):" || (echo "Invalid commit message" && exit 1)
       # -----------------------------
       # Prettier Check
       # -----------------------------
