@@ -1,5 +1,5 @@
 public with sharing class HelloWorld {
-    public static String sayHello() {
-        return 'Hello DevOps World!';
-    }
+  public static String sayHello() {
+    return 'Hello DevOps World!';
+  }
 }
