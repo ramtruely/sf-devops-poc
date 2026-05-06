@@ -52,6 +52,14 @@ jobs:
           echo "${{ secrets.SF_AUTH_DEV }}" > auth.txt
           sf org login sfdx-url --sfdx-url-file auth.txt --alias DevHub
 
+      # ---------------------------
+      # Debug
+      # ---------------------------     
+
+      - name: Debug Auth File
+        run: |
+          cat auth.txt | wc -c    
+
       # -----------------------------
       # Gate PR (basic)
       # -----------------------------
