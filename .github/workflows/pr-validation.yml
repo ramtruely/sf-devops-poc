@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 env:
-  SKIP_HEAVY_GATES: true   # 🔥 control switch
+  SKIP_HEAVY_GATES: true   # 🔥 Toggle
 
 jobs:
 
@@ -41,23 +41,12 @@ jobs:
           unzip pmd-bin-6.55.0.zip
 
       # -----------------------------
-      # Auth DevHub
+      # Auth (DevHub as DEV)
       # -----------------------------
       - name: Authenticate DevHub
         run: |
           echo "${{ secrets.SF_AUTH_DEV }}" > auth.txt
           sf org login sfdx-url --sfdx-url-file auth.txt --alias DevHub
-
-      # -----------------------------
-      # Create TEST (Scratch Org)
-      # -----------------------------
-      - name: Create Scratch Org (TEST)
-        run: |
-          sf org create scratch \
-            --definition-file config/project-scratch-def.json \
-            --alias TEST \
-            --duration-days 1 \
-            --set-default
 
       # -----------------------------
       # PR Gate
@@ -74,7 +63,7 @@ jobs:
           echo "$TITLE" | grep -E "^(feat|fix|chore|refactor|test):" || exit 1
 
       # -----------------------------
-      # Formatting
+      # Code Formatting
       # -----------------------------
       - name: Code Format Check
         run: npx prettier --check "**/*.{js,ts,html,css,cls}"
@@ -95,17 +84,16 @@ jobs:
       # -----------------------------
       # 🔥 CONDITIONAL GATES (SKIPPED NOW)
       # -----------------------------
-
       - name: Run Apex Tests
         if: env.SKIP_HEAVY_GATES != 'true'
-        run: sf apex run test --target-org TEST --result-format human --wait 10
+        run: sf apex run test --target-org DevHub --result-format human --wait 10
 
       - name: Validate Deployment
         if: env.SKIP_HEAVY_GATES != 'true'
         run: |
           sf project deploy start \
             --dry-run \
-            --target-org TEST \
+            --target-org DevHub \
             --test-level RunSpecifiedTests \
             --tests HelloWorldTest
 
@@ -126,14 +114,8 @@ jobs:
         run: echo "Combined validation logic"
 
       # -----------------------------
-      # Deployments (always run)
+      # Deployment (DEV only)
       # -----------------------------
-      - name: Deploy to TEST
-        run: |
-          sf project deploy start \
-            --target-org TEST \
-            --test-level NoTestRun
-
       - name: Deploy to DEV (DevHub)
         run: |
           sf project deploy start \
@@ -141,8 +123,34 @@ jobs:
             --test-level NoTestRun
 
       # -----------------------------
-      # Cleanup
+      # Other placeholders
       # -----------------------------
-      - name: Delete Scratch Org
-        if: always()
-        run: sf org delete scratch --target-org TEST --no-prompt
+      - name: Gate PR Bypass Approval
+        run: echo "Bypass approval logic - Not implemented"
+
+      - name: ChecksResolver
+        run: echo "ChecksResolver - Not implemented"
+
+      - name: Check Deployment Queue
+        run: echo "Deployment queue check - Not implemented"
+
+      - name: New Relic Exceptions Gate
+        run: echo "New Relic integration skipped"
+
+      - name: Find Duplicate Metadata
+        run: echo "Duplicate metadata detection - Not implemented"
+
+      - name: SF Unused Code
+        run: echo "Unused code detection - Not implemented"
+
+      - name: Dev Risk Profile
+        run: echo "Dev risk profiling - Not implemented"
+
+      - name: v1 Story Validations
+        run: echo "Story validation - Not implemented"
+
+      - name: SF Coverage Gate for Modified Classes
+        run: echo "Modified class coverage gate - Not implemented"
+
+      - name: Update PR
+        run: echo "Update PR with results - Not implemented"
