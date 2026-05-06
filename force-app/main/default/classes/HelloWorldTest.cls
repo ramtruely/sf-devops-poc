@@ -1,33 +1,31 @@
 @isTest
 private class HelloWorldTest {
+  @isTest
+  static void testHelloWorld() {
+    Profile p = [SELECT Id FROM Profile LIMIT 1];
 
-    @isTest
-    static void testHelloWorld() {
+    User u = new User(
+      Alias = 'testusr',
+      Email = 'testuser@test.com',
+      EmailEncodingKey = 'UTF-8',
+      LastName = 'Test',
+      LanguageLocaleKey = 'en_US',
+      LocaleSidKey = 'en_US',
+      ProfileId = p.Id,
+      TimeZoneSidKey = 'America/Los_Angeles',
+      Username = 'testuser' + System.currentTimeMillis() + '@test.com'
+    );
 
-        Profile p = [SELECT Id FROM Profile LIMIT 1];
+    insert u;
 
-        User u = new User(
-            Alias = 'testusr',
-            Email='testuser@test.com',
-            EmailEncodingKey='UTF-8',
-            LastName='Test',
-            LanguageLocaleKey='en_US',
-            LocaleSidKey='en_US',
-            ProfileId = p.Id,
-            TimeZoneSidKey='America/Los_Angeles',
-            Username='testuser' + System.currentTimeMillis() + '@test.com'
-        );
+    System.runAs(u) {
+      String result = HelloWorld.sayHello();
 
-        insert u;
-
-        System.runAs(u) {
-            String result = HelloWorld.sayHello();
-
-            System.assertEquals(
-                'Hello DevOps World!',
-                result,
-                'Unexpected greeting message'
-            );
-        }
+      System.assertEquals(
+        'Hello DevOps World!',
+        result,
+        'Unexpected greeting message'
+      );
     }
+  }
 }
