@@ -128,7 +128,7 @@ jobs:
           --tests HelloWorldTest
 
       # -----------------------------
-      # Coverage Gate (Basic)
+      # Coverage Gate (Basic) Process
       # -----------------------------
       - name: Coverage Gate
         run: echo "Enforce 75% coverage threshold"
