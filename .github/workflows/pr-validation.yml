@@ -128,8 +128,7 @@ jobs:
           sf project deploy start \
           --dry-run \
           --target-org DevHub \
-          --test-level RunLocalTests \
-          --code-coverage
+          --test-level RunLocalTests
 
       # -----------------------------
       # Coverage Gate (Basic)
