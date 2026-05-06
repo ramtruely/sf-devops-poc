@@ -1,13 +1,30 @@
 @isTest
 private class HelloWorldTest {
-  @isTest
-  static void testHello() {
-    Test.startTest();
 
-    String result = HelloWorld.sayHello();
+    @isTest
+    static void testHelloWorld() {
 
-    Test.stopTest();
+        // Create test user
+        Profile p = [SELECT Id FROM Profile WHERE Name='Standard User' LIMIT 1];
+        User u = new User(
+            Alias = 'testusr',
+            Email='testuser@test.com',
+            EmailEncodingKey='UTF-8',
+            LastName='Test',
+            LanguageLocaleKey='en_US',
+            LocaleSidKey='en_US',
+            ProfileId = p.Id,
+            TimeZoneSidKey='America/Los_Angeles',
+            Username='testuser' + System.currentTimeMillis() + '@test.com'
+        );
 
-    System.assertEquals('Hello DevOps World!', result);
-  }
+        insert u;
+
+        System.runAs(u) {
+            String result = HelloWorld.sayHello();
+
+            // ✅ Add assertion message
+            System.assertEquals('Hello, World', result, 'Unexpected greeting message');
+        }
+    }
 }
