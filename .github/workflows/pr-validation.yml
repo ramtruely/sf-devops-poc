@@ -125,6 +125,7 @@ jobs:
           --dry-run \
           --target-org DevHub \
           --test-level RunLocalTests \
+          --tests HelloWorldTest
 
       # -----------------------------
       # Coverage Gate (Basic)
