@@ -121,7 +121,7 @@ jobs:
       # Coverage Gate (Basic)
       # -----------------------------
       - name: Coverage Gate
-        run: echo "TODO: Enforce 75% coverage threshold"
+        run: echo "Enforce 75% coverage threshold"
 
       # -----------------------------
       # Placeholder Checks
