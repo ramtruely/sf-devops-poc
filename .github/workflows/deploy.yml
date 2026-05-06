@@ -22,7 +22,7 @@ jobs:
 
       - name: Authenticate Org
         run: |
-          echo "${{ secrets.SF_AUTH_URL }}" > auth.txt
+          echo "${{ secrets.SF_AUTH_DEV }}" > auth.txt
           sf org login sfdx-url --sfdx-url-file auth.txt --alias DevHub
 
       - name: Deploy to Org
