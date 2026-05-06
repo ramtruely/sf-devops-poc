@@ -1,82 +1,163 @@
-# PR Validation
-name: PR Validation
+name: Salesforce PR Validation
 
 on:
   pull_request:
     branches: [ main ]
 
 jobs:
+
+  pre-requisite:
+    runs-on: ubuntu-latest
+    outputs:
+      sandbox: "DevHub"
+    steps:
+      - name: Set Sandbox Output
+        run: echo "sandbox=DevHub" >> $GITHUB_OUTPUT
+
   validate:
+
+    needs: pre-requisite
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Install Node
+      # -----------------------------
+      # Setup
+      # -----------------------------
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
+
+      - name: Install Code Analyzer
+        run: sf plugins install @salesforce/sfdx-scanner
+
+      - name: Install Prettier
+        run: npm install -g prettier
 
       - name: Install PMD
         run: |
           wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip
           unzip pmd-bin-6.55.0.zip
 
+      # -----------------------------
+      # Auth
+      # -----------------------------
       - name: Authenticate Org
         run: |
-          echo "${{ secrets.SF_AUTH_URL }}" > auth.txt
+          echo "${{ secrets.SF_AUTH_DEV }}" > auth.txt
           sf org login sfdx-url --sfdx-url-file auth.txt --alias DevHub
 
-      - name: Validate Deployment (Check Only)
-        run: |
-          sf project deploy start \
-            --dry-run \
-            --target-org DevHub \
-            --test-level RunLocalTests
+      # -----------------------------
+      # Gate PR (basic)
+      # -----------------------------
+      - name: Gate PR
+        run: echo "PR Gate Triggered"
 
-      - name: Run Apex Tests
+      # -----------------------------
+      # Commit Message Check
+      # -----------------------------
+      - name: Check Commit Message Format
         run: |
-          sf apex run test \
-            --target-org DevHub \
-            --result-format human
+          echo "${{ github.event.pull_request.title }}" | grep -E "^(feat|fix|chore|refactor|test):" || (echo "Invalid commit message" && exit 1)
 
-      - name: Run PMD Scan
+      # -----------------------------
+      # Prettier Check
+      # -----------------------------
+      - name: Code Format Check (Prettier)
+        run: prettier --check "**/*.{js,ts,html,css}"
+
+      # -----------------------------
+      # Code Analyzer (SFCA)
+      # -----------------------------
+      - name: SF Code Analyzer
+        run: |
+          sf scanner run \
+          --target "force-app" \
+          --format table
+
+      # -----------------------------
+      # PMD Scan
+      # -----------------------------
+      - name: PMD Scan
         run: |
           ./pmd-bin-6.55.0/bin/run.sh pmd \
           -d force-app \
           -R pmd/ruleset.xml \
-          -f text || true 
+          -f text
 
-      - name: Install Code Analyzer
-        run: sf plugins install @salesforce/sfdx-scanner
-
-      - name: Run Code Analysis
+      # -----------------------------
+      # LWC Unit Test
+      # -----------------------------
+      - name: Run LWC Tests
         run: |
-          sf scanner run \
-          --target "force-app" \
-          --format json \
-          --outfile scanner-report.json 
-          
-      - name: Upload Scanner Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: scanner-report
-          path: scanner-report.json 
+          echo "Running LWC tests (placeholder if not configured)"
 
-      - name: Install Graphviz
-        run: sudo apt-get update && sudo apt-get install -y graphviz    
-
-      - name: Generate Graph
+      # -----------------------------
+      # Apex Test + Coverage
+      # -----------------------------
+      - name: SF Unit Test Gate
         run: |
-          node generate-graph.js
-          dot -Tpng graph.dot -o graph.png
+          sf apex run test \
+          --target-org DevHub \
+          --result-format human
 
-      - name: Upload Graph
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-graph
-          path: graph.png   
+      # -----------------------------
+      # Deployment Validation
+      # -----------------------------
+      - name: Validate Deployment
+        run: |
+          sf project deploy start \
+          --dry-run \
+          --target-org DevHub \
+          --test-level RunLocalTests \
+          --code-coverage
+
+      # -----------------------------
+      # Coverage Gate (Basic)
+      # -----------------------------
+      - name: Coverage Gate
+        run: echo "TODO: Enforce 75% coverage threshold"
+
+      # -----------------------------
+      # Placeholder Checks
+      # -----------------------------
+      - name: Package Coverage Check
+        run: echo "Package coverage check - Not implemented"
+
+      - name: Gate PR Bypass Approval
+        run: echo "Bypass approval logic - Not implemented"
+
+      - name: ChecksResolver
+        run: echo "ChecksResolver - Not implemented"
+
+      - name: Check Deployment Queue
+        run: echo "Deployment queue check for ${{needs.pre-requisite.outputs.sandbox}} - Not implemented"
+
+      - name: New Relic Exceptions Gate
+        run: echo "New Relic integration skipped"
+
+      - name: Calculate Risk Assessment
+        run: echo "Risk calculation - Not implemented"
+
+      - name: Find Duplicate Metadata
+        run: echo "Duplicate metadata detection - Not implemented"
+
+      - name: SF Unused Code
+        run: echo "Unused code detection - Not implemented"
+
+      - name: Dev Risk Profile
+        run: echo "Dev risk profiling - Not implemented"
+
+      - name: v1 Story Validations
+        run: echo "Story validation - Not implemented"
+
+      - name: SF Coverage Gate for Modified Classes
+        run: echo "Modified class coverage gate - Not implemented"
+
+      - name: Update PR
+        run: echo "Update PR with results - Not implemented"
