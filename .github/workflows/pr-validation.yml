@@ -118,7 +118,7 @@ jobs:
         run: |
           sf apex run test \
           --target-org DevHub \
-          --result-format human
+          --result-format human \
           -- wait 10
       # -----------------------------
       # Deployment Validation
