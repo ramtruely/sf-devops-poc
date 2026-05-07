@@ -89,7 +89,7 @@ jobs:
 
       - name: Unit test & Deploy validation
         if: env.VALIDATION_LEVEL == 'full'
-        run: echo "Combined validation logic"name: Salesforce PR Validation
+        run: echo "Combined validation logic"
 
 on:
   pull_request:
