@@ -39,7 +39,7 @@ jobs:
           sf org login sfdx-url --sfdx-url-file auth_load.txt --alias LOAD
 
       # -----------------------------
-      # Deploy to TEST
+      # Deploying to TEST
       # -----------------------------
       - name: Deploy to TEST
         run: |
@@ -48,7 +48,7 @@ jobs:
             --test-level NoTestRun
 
       # -----------------------------
-      # Deploy to LOAD
+      # Deploying to LOAD
       # -----------------------------
       - name: Deploy to LOAD
         run: |
