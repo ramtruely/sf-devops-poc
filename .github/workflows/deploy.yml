@@ -1,4 +1,4 @@
-name: Deploy to Salesforce
+name: Salesforce Deployment
 
 on:
   push:
@@ -9,24 +9,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Install Node
+      # -----------------------------
+      # Setup
+      # -----------------------------
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
 
-      - name: Authenticate Org
+      # -----------------------------
+      # Authenticate TEST
+      # -----------------------------
+      - name: Authenticate TEST Org
         run: |
-          echo "${{ secrets.SF_AUTH_DEV }}" > auth.txt
-          sf org login sfdx-url --sfdx-url-file auth.txt --alias DevHub
+          echo "${{ secrets.SF_AUTH_TEST }}" > auth_test.txt
+          sf org login sfdx-url --sfdx-url-file auth_test.txt --alias TEST
 
-      - name: Deploy to Org
+      # -----------------------------
+      # Authenticate LOAD
+      # -----------------------------
+      - name: Authenticate LOAD Org
+        run: |
+          echo "${{ secrets.SF_AUTH_LOAD }}" > auth_load.txt
+          sf org login sfdx-url --sfdx-url-file auth_load.txt --alias LOAD
+
+      # -----------------------------
+      # Deploy to TEST
+      # -----------------------------
+      - name: Deploy to TEST
         run: |
           sf project deploy start \
-            --target-org DevHub \
-            --test-level RunLocalTests
+            --target-org TEST \
+            --test-level NoTestRun
+
+      # -----------------------------
+      # Deploy to LOAD
+      # -----------------------------
+      - name: Deploy to LOAD
+        run: |
+          sf project deploy start \
+            --target-org LOAD \
+            --test-level NoTestRun

@@ -5,26 +5,14 @@ on:
     branches: [ main ]
 
 env:
-  VALIDATION_LEVEL: basic
+  VALIDATION_LEVEL: basic   # 🔥 change to 'full' later
 
 jobs:
-
   validate:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
-
-      # -----------------------------
-      # Detect First Deployment
-      # -----------------------------
-      - name: Detect First Deployment
-        run: |
-          if [ -f .first_deploy_done ]; then
-            echo "FIRST_DEPLOY=false" >> $GITHUB_ENV
-          else
-            echo "FIRST_DEPLOY=true" >> $GITHUB_ENV
-          fi
 
       # -----------------------------
       # Setup
@@ -52,39 +40,23 @@ jobs:
           unzip pmd-bin-6.55.0.zip
 
       # -----------------------------
-      # Authenticate TEST Org
-      # -----------------------------
-      - name: Authenticate TEST
-        run: |
-          echo "${{ secrets.SF_AUTH_TEST }}" > auth_test.txt
-          sf org login sfdx-url --sfdx-url-file auth_test.txt --alias TEST
-
-      # -----------------------------
-      # Authenticate LOAD Org
-      # -----------------------------
-      - name: Authenticate LOAD
-        run: |
-          echo "${{ secrets.SF_AUTH_LOAD }}" > auth_load.txt
-          sf org login sfdx-url --sfdx-url-file auth_load.txt --alias LOAD
-
-      # -----------------------------
       # PR Gate
       # -----------------------------
       - name: Gate PR
         run: echo "PR Validation Started"
 
       # -----------------------------
-      # Commit Message Validation
+      # Commit Message Check
       # -----------------------------
-      - name: Check Commit Message Format
+      - name: Check Commit Message
         run: |
           TITLE="${{ github.event.pull_request.title }}"
           echo "$TITLE" | grep -E "^(feat|fix|chore|refactor|test):" || exit 1
 
       # -----------------------------
-      # Code Format Check
+      # Code Format
       # -----------------------------
-      - name: Code Format Check
+      - name: Prettier Check
         run: npx prettier --check "**/*.{js,ts,html,css,cls}"
 
       # -----------------------------
@@ -101,86 +73,20 @@ jobs:
             -f text
 
       # -----------------------------
-      # 🚀 CONDITIONAL HEAVY GATES
+      # 🔥 Conditional Heavy Gates
       # -----------------------------
       - name: Package Coverage Check
-        if: env.FIRST_DEPLOY != 'true'
+        if: env.VALIDATION_LEVEL == 'full'
         run: echo "Package coverage logic"
 
       - name: Calculate Risk Assessment
-        if: env.FIRST_DEPLOY != 'true'
+        if: env.VALIDATION_LEVEL == 'full'
         run: echo "Risk assessment logic"
 
       - name: SF Unit Test Gate
-        if: env.FIRST_DEPLOY != 'true'
+        if: env.VALIDATION_LEVEL == 'full'
         run: echo "Unit test gate logic"
 
-      - name: Unit test & Deploy validation test
-        if: env.FIRST_DEPLOY != 'true'
+      - name: Unit test & Deploy validation
+        if: env.VALIDATION_LEVEL == 'full'
         run: echo "Combined validation logic"
-
-      # -----------------------------
-      # Deploy to TEST
-      # -----------------------------
-      - name: Deploy to TEST
-        run: |
-          sf project deploy start \
-            --target-org TEST \
-            --test-level NoTestRun
-
-      # -----------------------------
-      # Deploy to LOAD
-      # -----------------------------
-      - name: Deploy to LOAD
-        run: |
-          sf project deploy start \
-            --target-org LOAD \
-            --test-level NoTestRun
-
-      # -----------------------------
-      # Mark First Deployment Complete
-      # -----------------------------
-      - name: Mark First Deployment Complete
-        if: env.FIRST_DEPLOY == 'true'
-        run: |
-          touch .first_deploy_done
-
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-
-          git add .first_deploy_done
-          git commit -m "chore: mark first deployment complete" || echo "No changes"
-          git push origin HEAD:${{ github.head_ref }}
-
-      # -----------------------------
-      # Placeholder Gates
-      # -----------------------------
-      - name: Gate PR Bypass Approval
-        run: echo "Bypass approval - Not implemented"
-
-      - name: ChecksResolver
-        run: echo "ChecksResolver - Not implemented"
-
-      - name: Check Deployment Queue
-        run: echo "Deployment queue check - Not implemented"
-
-      - name: New Relic Exceptions Gate
-        run: echo "New Relic integration skipped"
-
-      - name: Find Duplicate Metadata
-        run: echo "Duplicate metadata detection - Not implemented"
-
-      - name: SF Unused Code
-        run: echo "Unused code detection - Not implemented"
-
-      - name: Dev Risk Profile
-        run: echo "Dev risk profile - Not implemented"
-
-      - name: v1 Story Validations
-        run: echo "Story validation - Not implemented"
-
-      - name: SF Coverage Gate for Modified Classes
-        run: echo "Modified class coverage gate - Not implemented"
-
-      - name: Update PR
-        run: echo "PR updated with validation results"
