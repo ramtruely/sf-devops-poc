@@ -12,6 +12,27 @@ jobs:
       - uses: actions/checkout@v3
 
       # -----------------------------
+      # Detect First Deployment (Cache)
+      # -----------------------------
+      - name: Check Deployment Cache
+        id: cache-check
+        uses: actions/cache@v4
+        with:
+          path: .deploy_marker
+          key: deploy-${{ github.repository }}
+
+      - name: Set Deployment Mode
+        run: |
+          if [ "${{ steps.cache-check.outputs.cache-hit }}" == "true" ]; then
+            echo "FIRST_DEPLOY=false" >> $GITHUB_ENV
+          else
+            echo "FIRST_DEPLOY=true" >> $GITHUB_ENV
+          fi
+
+      - name: Print Mode
+        run: echo "First Deploy = $FIRST_DEPLOY"
+
+      # -----------------------------
       # Setup
       # -----------------------------
       - name: Setup Node
@@ -39,7 +60,26 @@ jobs:
           sf org login sfdx-url --sfdx-url-file auth_load.txt --alias LOAD
 
       # -----------------------------
-      # Deploying to TEST
+      # 🔥 CONDITIONAL HEAVY GATES
+      # -----------------------------
+      - name: Package Coverage Check
+        if: env.FIRST_DEPLOY != 'true'
+        run: echo "Package coverage logic"
+
+      - name: Calculate Risk Assessment
+        if: env.FIRST_DEPLOY != 'true'
+        run: echo "Risk logic"
+
+      - name: SF Unit Test Gate
+        if: env.FIRST_DEPLOY != 'true'
+        run: echo "Unit test gate logic"
+
+      - name: Unit test & Deploy validation
+        if: env.FIRST_DEPLOY != 'true'
+        run: echo "Combined validation logic"
+
+      # -----------------------------
+      # Deploy to TEST
       # -----------------------------
       - name: Deploy to TEST
         run: |
@@ -48,10 +88,19 @@ jobs:
             --test-level NoTestRun
 
       # -----------------------------
-      # Deploying to LOAD
+      # Deploy to LOAD
       # -----------------------------
       - name: Deploy to LOAD
         run: |
           sf project deploy start \
             --target-org LOAD \
             --test-level NoTestRun
+
+      # -----------------------------
+      # Save Marker (after first run)
+      # -----------------------------
+      - name: Save Deployment Marker
+        if: env.FIRST_DEPLOY == 'true'
+        run: |
+          mkdir -p .deploy_marker
+          echo "done" > .deploy_marker/status.txt

@@ -89,4 +89,60 @@ jobs:
 
       - name: Unit test & Deploy validation
         if: env.VALIDATION_LEVEL == 'full'
-        run: echo "Combined validation logic"
+        run: echo "Combined validation logic"name: Salesforce PR Validation
+
+on:
+  pull_request:
+    branches: [ main ]
+
+env:
+  VALIDATION_LEVEL: auto
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli
+
+      - name: Install Code Analyzer
+        run: sf plugins install @salesforce/sfdx-scanner
+
+      - name: Install Prettier
+        run: npm install -g prettier
+
+      - name: Install PMD
+        run: |
+          wget https://github.com/pmd/pmd/releases/download/pmd_releases%2F6.55.0/pmd-bin-6.55.0.zip
+          unzip pmd-bin-6.55.0.zip
+
+      - name: Check Commit Message
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          echo "$TITLE" | grep -E "^(feat|fix|chore|refactor|test):" || exit 1
+
+      - name: Prettier Check
+        run: npx prettier --check "**/*.{js,ts,html,css,cls}"
+
+      - name: SF Code Analyzer
+        run: sf scanner run --target "force-app" --format table
+
+      - name: PMD Scan
+        run: |
+          ./pmd-bin-6.55.0/bin/run.sh pmd \
+            -d force-app \
+            -R pmd/ruleset.xml \
+            -f text
+
+      # Heavy checks intentionally NOT here (only in deploy stage)
