@@ -22,7 +22,7 @@ jobs:
           key: deploy-marker-TEST
 
       # -----------------------------
-      # Detect FIRST DEPLOY (LOAD)
+      # Detect FIRST DEPLOYMENT (LOAD) 
       # -----------------------------
       - name: Check LOAD Deployment Cache
         id: load-cache
