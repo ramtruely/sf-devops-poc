@@ -11,22 +11,45 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Detect first deployment (cache)
-      - name: Check Deployment Cache
-        id: cache-check
+      # -----------------------------
+      # Detect TEST First Deployment
+      # -----------------------------
+      - name: Check TEST Cache
+        id: test-cache
         uses: actions/cache@v4
         with:
-          path: .deploy_marker
-          key: deploy-${{ github.repository }}
+          path: .deploy_marker_test
+          key: deploy-marker-TEST
 
-      - name: Set Deployment Mode
+      - name: Set TEST Mode
         run: |
-          if [ "${{ steps.cache-check.outputs.cache-hit }}" == "true" ]; then
-            echo "FIRST_DEPLOY=false" >> $GITHUB_ENV
+          if [ "${{ steps.test-cache.outputs.cache-hit }}" == "true" ]; then
+            echo "TEST_FIRST_DEPLOY=false" >> $GITHUB_ENV
           else
-            echo "FIRST_DEPLOY=true" >> $GITHUB_ENV
+            echo "TEST_FIRST_DEPLOY=true" >> $GITHUB_ENV
           fi
 
+      # -----------------------------
+      # Detect LOAD First Deployment
+      # -----------------------------
+      - name: Check LOAD Cache
+        id: load-cache
+        uses: actions/cache@v4
+        with:
+          path: .deploy_marker_load
+          key: deploy-marker-LOAD
+
+      - name: Set LOAD Mode
+        run: |
+          if [ "${{ steps.load-cache.outputs.cache-hit }}" == "true" ]; then
+            echo "LOAD_FIRST_DEPLOY=false" >> $GITHUB_ENV
+          else
+            echo "LOAD_FIRST_DEPLOY=true" >> $GITHUB_ENV
+          fi
+
+      # -----------------------------
+      # Setup
+      # -----------------------------
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -35,6 +58,9 @@ jobs:
       - name: Install Salesforce CLI
         run: npm install -g @salesforce/cli
 
+      # -----------------------------
+      # Auth
+      # -----------------------------
       - name: Authenticate TEST
         run: |
           echo "${{ secrets.SF_AUTH_TEST }}" > auth_test.txt
@@ -45,22 +71,24 @@ jobs:
           echo "${{ secrets.SF_AUTH_LOAD }}" > auth_load.txt
           sf org login sfdx-url --sfdx-url-file auth_load.txt --alias LOAD
 
-      # Conditional checks
-      - name: Package Coverage Check
-        if: env.FIRST_DEPLOY != 'true'
-        run: echo "Package coverage logic"
+      # -----------------------------
+      # 🔥 TEST Deployment
+      # -----------------------------
+      - name: TEST - Package Coverage Check
+        if: env.TEST_FIRST_DEPLOY != 'true'
+        run: echo "TEST: Package coverage logic"
 
-      - name: Calculate Risk Assessment
-        if: env.FIRST_DEPLOY != 'true'
-        run: echo "Risk logic"
+      - name: TEST - Risk Assessment
+        if: env.TEST_FIRST_DEPLOY != 'true'
+        run: echo "TEST: Risk logic"
 
-      - name: SF Unit Test Gate
-        if: env.FIRST_DEPLOY != 'true'
-        run: echo "Unit test gate logic"
+      - name: TEST - Unit Test Gate
+        if: env.TEST_FIRST_DEPLOY != 'true'
+        run: echo "TEST: Unit test gate"
 
-      - name: Unit test & Deploy validation
-        if: env.FIRST_DEPLOY != 'true'
-        run: echo "Combined validation logic"
+      - name: TEST - Deploy Validation
+        if: env.TEST_FIRST_DEPLOY != 'true'
+        run: echo "TEST: Combined validation"
 
       - name: Deploy to TEST
         run: |
@@ -68,14 +96,47 @@ jobs:
             --target-org TEST \
             --test-level NoTestRun
 
+      # -----------------------------
+      # Save TEST Marker
+      # -----------------------------
+      - name: Save TEST Marker
+        if: env.TEST_FIRST_DEPLOY == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .deploy_marker_test
+          key: deploy-marker-TEST
+
+      # -----------------------------
+      # 🔥 LOAD Deployment
+      # -----------------------------
+      - name: LOAD - Package Coverage Check
+        if: env.LOAD_FIRST_DEPLOY != 'true'
+        run: echo "LOAD: Package coverage logic"
+
+      - name: LOAD - Risk Assessment
+        if: env.LOAD_FIRST_DEPLOY != 'true'
+        run: echo "LOAD: Risk logic"
+
+      - name: LOAD - Unit Test Gate
+        if: env.LOAD_FIRST_DEPLOY != 'true'
+        run: echo "LOAD: Unit test gate"
+
+      - name: LOAD - Deploy Validation
+        if: env.LOAD_FIRST_DEPLOY != 'true'
+        run: echo "LOAD: Combined validation"
+
       - name: Deploy to LOAD
         run: |
           sf project deploy start \
             --target-org LOAD \
             --test-level NoTestRun
 
-      - name: Save Deployment Marker
-        if: env.FIRST_DEPLOY == 'true'
-        run: |
-          mkdir -p .deploy_marker
-          echo "done" > .deploy_marker/status.txt
+      # -----------------------------
+      # Save LOAD Marker
+      # -----------------------------
+      - name: Save LOAD Marker
+        if: env.LOAD_FIRST_DEPLOY == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .deploy_marker_load
+          key: deploy-marker-LOAD
