@@ -77,22 +77,38 @@ jobs:
       - name: TEST - Package Coverage Check
         if: env.TEST_FIRST_DEPLOY != 'true'
         run: |
+<<<<<<< HEAD
           echo "TEST: Package coverage logic"
+=======
+           echo "TEST: Package coverage logic"
+>>>>>>> feature/test-pipeline
 
       - name: TEST - Risk Assessment
         if: env.TEST_FIRST_DEPLOY != 'true'
         run: |
+<<<<<<< HEAD
           echo "TEST: Risk logic"
+=======
+           echo "TEST: Risk logic"
+>>>>>>> feature/test-pipeline
 
       - name: TEST - Unit Test Gate
         if: env.TEST_FIRST_DEPLOY != 'true'
         run: |
+<<<<<<< HEAD
           echo "TEST: Unit test gate"
+=======
+           echo "TEST: Unit test gate"
+>>>>>>> feature/test-pipeline
 
       - name: TEST - Deploy Validation
         if: env.TEST_FIRST_DEPLOY != 'true'
         run: |
+<<<<<<< HEAD
           echo "TEST: Combined validation"
+=======
+           echo "TEST: Combined validation"
+>>>>>>> feature/test-pipeline
 
       - name: Deploy to TEST
         run: |
@@ -116,22 +132,38 @@ jobs:
       - name: LOAD - Package Coverage Check
         if: env.LOAD_FIRST_DEPLOY != 'true'
         run: |
+<<<<<<< HEAD
           echo "LOAD: Package coverage logic"
+=======
+           echo "LOAD: Package coverage logic"
+>>>>>>> feature/test-pipeline
 
       - name: LOAD - Risk Assessment
         if: env.LOAD_FIRST_DEPLOY != 'true'
         run: |
+<<<<<<< HEAD
           echo "LOAD: Risk logic"
+=======
+           echo "LOAD: Risk logic"
+>>>>>>> feature/test-pipeline
 
       - name: LOAD - Unit Test Gate
         if: env.LOAD_FIRST_DEPLOY != 'true'
         run: |
+<<<<<<< HEAD
           echo "LOAD: Unit test gate"
+=======
+           echo "LOAD: Unit test gate"
+>>>>>>> feature/test-pipeline
 
       - name: LOAD - Deploy Validation
         if: env.LOAD_FIRST_DEPLOY != 'true'
         run: |
+<<<<<<< HEAD
           echo "LOAD: Combined validation"
+=======
+           echo "LOAD: Combined validation"
+>>>>>>> feature/test-pipeline
 
       - name: Deploy to LOAD
         run: |
