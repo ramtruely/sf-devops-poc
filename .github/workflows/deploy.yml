@@ -76,19 +76,23 @@ jobs:
       # -----------------------------
       - name: TEST - Package Coverage Check
         if: env.TEST_FIRST_DEPLOY != 'true'
-        run: echo "TEST: Package coverage logic"
+        run: |
+           echo "TEST: Package coverage logic"
 
       - name: TEST - Risk Assessment
         if: env.TEST_FIRST_DEPLOY != 'true'
-        run: echo "TEST: Risk logic"
+        run: |
+           echo "TEST: Risk logic"
 
       - name: TEST - Unit Test Gate
         if: env.TEST_FIRST_DEPLOY != 'true'
-        run: echo "TEST: Unit test gate"
+        run: |
+           echo "TEST: Unit test gate"
 
       - name: TEST - Deploy Validation
         if: env.TEST_FIRST_DEPLOY != 'true'
-        run: echo "TEST: Combined validation"
+        run: |
+           echo "TEST: Combined validation"
 
       - name: Deploy to TEST
         run: |
@@ -111,19 +115,23 @@ jobs:
       # -----------------------------
       - name: LOAD - Package Coverage Check
         if: env.LOAD_FIRST_DEPLOY != 'true'
-        run: echo "LOAD: Package coverage logic"
+        run: |
+           echo "LOAD: Package coverage logic"
 
       - name: LOAD - Risk Assessment
         if: env.LOAD_FIRST_DEPLOY != 'true'
-        run: echo "LOAD: Risk logic"
+        run: |
+           echo "LOAD: Risk logic"
 
       - name: LOAD - Unit Test Gate
         if: env.LOAD_FIRST_DEPLOY != 'true'
-        run: echo "LOAD: Unit test gate"
+        run: |
+           echo "LOAD: Unit test gate"
 
       - name: LOAD - Deploy Validation
         if: env.LOAD_FIRST_DEPLOY != 'true'
-        run: echo "LOAD: Combined validation"
+        run: |
+           echo "LOAD: Combined validation"
 
       - name: Deploy to LOAD
         run: |
