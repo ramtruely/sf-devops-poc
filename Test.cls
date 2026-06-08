@@ -1,3 +1,11 @@
+- name: Create Analyzer Record
+  run: |
+    sf data create record \
+      --sobject dx_Code_Analyzer__c \
+      --values "Name='SFCA POC Run',Author__c='Tulasiram',Branch__c='feature-ram-sfca',Commit_ID__c='12345',Package__c='Salesforce-sfca-poc'"
+      --target-org test-org
+
+---
 name: Salesforce Test
 
 on:
