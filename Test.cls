@@ -1,3 +1,31 @@
+name: Salesforce Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-login:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli
+
+      - name: Authenticate Org
+        run: |
+          echo "${{ secrets.SF_AUTH_URL }}" > auth.txt
+
+          sf org login sfdx-url \
+            --sfdx-url-file auth.txt \
+            --alias test-org
+
+      - name: Verify Login
+        run: |
+          sf org display --target-org test-org
+
 ---
 name: SFCA POC
 
