@@ -1,4 +1,61 @@
 ---
+name: SFCA Salesforce Loader
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  load-sfca:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # ----------------------------------
+      # Salesforce Authentication
+      # ----------------------------------
+
+      - name: Auth Salesforce
+        id: sfdx-auth
+        uses: allegis-is/allegis-sf-action/sf-authentication@master
+        with:
+          sfdx_alias: test-org
+
+      # ----------------------------------
+      # Verify Login
+      # ----------------------------------
+
+      - name: Verify Org
+        run: |
+          sf org list
+
+      - name: Verify Org Details
+        run: |
+          sf org display --target-org test-org
+
+      # ----------------------------------
+      # Python Setup
+      # ----------------------------------
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ----------------------------------
+      # Execute Loader
+      # ----------------------------------
+
+      - name: Load JSON Into Salesforce
+        run: |
+          python scripts/load_sfca_to_salesforce.py
+
+
+---
 import json
 import subprocess
 
