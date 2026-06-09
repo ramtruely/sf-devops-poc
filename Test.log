@@ -1,0 +1,151 @@
+const fs = require('fs');
+const { execSync } = require('child_process');
+
+const data = JSON.parse(
+  fs.readFileSync('./sfca_results.json', 'utf8')
+);
+
+function run(cmd) {
+  return execSync(cmd, {
+    encoding: 'utf8',
+    stdio: ['pipe', 'pipe', 'pipe']
+  });
+}
+
+const severityMap = {
+  1: 'BLOCKER',
+  2: 'CRITICAL',
+  3: 'MAJOR',
+  4: 'MINOR',
+  5: 'INFO',
+  High: 'CRITICAL',
+  Moderate: 'MAJOR',
+  Low: 'MINOR'
+};
+
+console.log(
+  `Found ${data.violations?.length || 0} violations`
+);
+
+console.log('Creating Analyzer Record');
+
+const analyzerResult = run(`
+sf data create record \
+--sobject dx_Code_Analyzer__c \
+--values "Name=SFCA_${Date.now()}
+Author__c=btulasiram@teksystems.com
+Branch__c=${process.env.GITHUB_REF_NAME || 'main'}
+Commit_ID__c=${process.env.GITHUB_SHA || 'manual'}
+Package__c=${process.env.GITHUB_REPOSITORY || 'local'}" \
+--target-org dxvizdev \
+--json
+`);
+
+const analyzerId =
+  JSON.parse(analyzerResult).result.id;
+
+console.log(
+  `Analyzer Created: ${analyzerId}`
+);
+
+const fileMap = {};
+
+for (const violation of data.violations || []) {
+
+  const location =
+    violation.locations?.[0];
+
+  if (!location) continue;
+
+  // ---------- FILE RECORD ----------
+
+  if (!fileMap[location.file]) {
+
+    const fileName =
+      location.file.split('/').pop();
+
+    const fileResult = run(`
+sf data create record \
+--sobject dx_Code_File__c \
+--values "Name=${fileName}
+File_Path__c=${location.file}
+Language__c=Apex
+File_Status__c=Active
+Author__c=btulasiram@teksystems.com
+Code_Analyzer__c=${analyzerId}" \
+--target-org dxvizdev \
+--json
+`);
+
+    fileMap[location.file] =
+      JSON.parse(fileResult).result.id;
+  }
+
+  const fileId =
+    fileMap[location.file];
+
+  // ---------- CLEAN VALUES ----------
+
+  const safeRule =
+    (violation.rule || 'UNKNOWN')
+      .replace(/[^a-zA-Z0-9_]/g, '');
+
+  const safeMessage =
+    (violation.message || '')
+      .replace(/'/g, '')
+      .replace(/"/g, '')
+      .replace(/\n/g, ' ')
+      .replace(/\r/g, ' ')
+      .replace(/,/g, ' ')
+      .trim();
+
+  const safeTags =
+    (violation.tags || [])
+      .join(';')
+      .replace(/'/g, '')
+      .replace(/"/g, '');
+
+  const violationId =
+    `${safeRule}_${location.startLine || 0}`;
+
+  const severity =
+    severityMap[violation.severity] || 'INFO';
+
+  console.log(
+    `Creating violation: ${safeRule}`
+  );
+
+  try {
+
+    run(`
+sf data create record \
+--sobject dx_Code_Violation__c \
+--values "Name=${safeRule}
+Rule__c=${safeRule}
+Engine__c=${violation.engine || 'PMD'}
+Message__c=${safeMessage}
+Severity__c=${severity}
+Start_Line__c=${location.startLine || 0}
+End_Line__c=${location.endLine || 0}
+Start_Column__c=${location.startColumn || 0}
+End_Column__c=${location.endColumn || 0}
+Tags__c=${safeTags}
+Violation_ID__c=${violationId}
+Status__c=OPEN
+Code_File__c=${fileId}" \
+--target-org dxvizdev
+`);
+
+  } catch (err) {
+
+    console.log(
+      `Failed Violation: ${safeRule}`
+    );
+
+    console.log(
+      err.stdout?.toString() || err.message
+    );
+  }
+}
+
+console.log('SFCA Upload Completed');
