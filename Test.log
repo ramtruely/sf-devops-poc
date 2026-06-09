@@ -1,3 +1,125 @@
+---
+const fs = require('fs');
+const { execSync } = require('child_process');
+
+const data = JSON.parse(
+  fs.readFileSync('./sfca_results.json', 'utf8')
+);
+
+function run(cmd) {
+  return execSync(cmd, { encoding: 'utf8' });
+}
+
+const severityMap = {
+  1: 'BLOCKER',
+  2: 'CRITICAL',
+  3: 'MAJOR',
+  4: 'MINOR',
+  5: 'INFO'
+};
+
+console.log(`Found ${data.violations?.length || 0} violations`);
+
+//
+// Create Analyzer
+//
+const analyzerResult = run(`
+sf data create record \
+--sobject dx_Code_Analyzer__c \
+--values "Name=SFCA_${Date.now()}
+Author__c=btulasiram@teksystems.com
+Branch__c=${process.env.GITHUB_REF_NAME || 'main'}
+Commit_ID__c=${process.env.GITHUB_SHA || 'manual'}
+Package__c=${process.env.GITHUB_REPOSITORY || 'local'}" \
+--target-org dxvizdev \
+--json
+`);
+
+const analyzerId =
+  JSON.parse(analyzerResult).result.id;
+
+console.log(`Analyzer Created: ${analyzerId}`);
+
+const fileMap = {};
+
+for (const violation of data.violations || []) {
+
+  const location = violation.locations?.[0];
+
+  if (!location) continue;
+
+  //
+  // Create File
+  //
+  if (!fileMap[location.file]) {
+
+    const fileName =
+      location.file.split('/').pop();
+
+    const fileResult = run(`
+sf data create record \
+--sobject dx_Code_File__c \
+--values "Name=${fileName}
+File_Path__c=${location.file}
+Language__c=Apex
+File_Status__c=Active
+Author__c=btulasiram@teksystems.com
+Code_Analyzer__c=${analyzerId}" \
+--target-org dxvizdev \
+--json
+`);
+
+    fileMap[location.file] =
+      JSON.parse(fileResult).result.id;
+  }
+
+  const fileId =
+    fileMap[location.file];
+
+  //
+  // Safe values
+  //
+  const rule =
+    (violation.rule || 'UNKNOWN')
+      .replace(/[^a-zA-Z0-9]/g, '');
+
+  const severity =
+    severityMap[violation.severity] || 'INFO';
+
+  //
+  // Create Violation
+  //
+  try {
+
+    run(`
+sf data create record \
+--sobject dx_Code_Violation__c \
+--values "Name=${rule}
+Rule__c=${rule}
+Engine__c=PMD
+Severity__c=${severity}
+Start_Line__c=${location.startLine || 0}
+End_Line__c=${location.endLine || 0}
+Start_Column__c=${location.startColumn || 0}
+End_Column__c=${location.endColumn || 0}
+Violation_ID__c=${rule}_${location.startLine || 0}
+Status__c=OPEN
+Code_File__c=${fileId}" \
+--target-org dxvizdev
+`);
+
+    console.log(`Inserted: ${rule}`);
+
+  } catch (err) {
+
+    console.log(`Failed: ${rule}`);
+    console.log(err.message);
+  }
+}
+
+console.log('SFCA Upload Completed');
+
+---
 const fs = require('fs');
 const { execSync } = require('child_process');
 
