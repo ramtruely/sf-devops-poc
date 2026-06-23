@@ -1,0 +1,82 @@
+
+---
+const fs = require("fs");
+
+const sfca = JSON.parse(
+  fs.readFileSync("sfca_results.json", "utf8")
+);
+
+const report = {
+  pullRequest: {
+    number: process.env.PR_NUMBER,
+    title: process.env.PR_TITLE
+  },
+  summary: sfca.violationCounts,
+  versions: sfca.versions,
+  violations: sfca.violations
+};
+
+fs.writeFileSync(
+  "sfca-report.json",
+  JSON.stringify(report, null, 2)
+);
+---
+const fs = require("fs");
+
+const data = {
+  repository: process.env.GITHUB_REPOSITORY,
+  pullRequest: {
+    number: process.env.PR_NUMBER,
+    title: process.env.PR_TITLE,
+    author: process.env.GITHUB_ACTOR,
+    sourceBranch: process.env.GITHUB_HEAD_REF,
+    targetBranch: process.env.GITHUB_BASE_REF,
+    commitSha: process.env.GITHUB_SHA,
+    workflow: process.env.GITHUB_WORKFLOW,
+    runId: process.env.GITHUB_RUN_ID,
+    runNumber: process.env.GITHUB_RUN_NUMBER,
+    generatedAt: new Date().toISOString()
+  }
+};
+
+fs.writeFileSync(
+  "pr-context.json",
+  JSON.stringify(data, null, 2)
+);
+---
+- uses: actions/upload-artifact@v4
+  with:
+    name: sfca-results
+    path: sfca_results.json
+
+- uses: actions/upload-artifact@v4
+  with:
+    name: pr-context
+    path: pr-context.json
+
+- uses: actions/upload-artifact@v4
+  with:
+    name: sfca-report
+    path: sfca-report.json
+
+---
+- name: Generate PR Context
+  shell: bash
+  run: |
+    node ${{ github.action_path }}/create-pr-context.js
+  env:
+    PR_NUMBER: ${{ github.event.pull_request.number }}
+    PR_TITLE: ${{ github.event.pull_request.title }}
+    GITHUB_REPOSITORY: ${{ github.repository }}
+    GITHUB_ACTOR: ${{ github.actor }}
+    GITHUB_HEAD_REF: ${{ github.head_ref }}
+    GITHUB_BASE_REF: ${{ github.base_ref }}
+    GITHUB_SHA: ${{ github.sha }}
+    GITHUB_WORKFLOW: ${{ github.workflow }}
+    GITHUB_RUN_ID: ${{ github.run_id }}
+    GITHUB_RUN_NUMBER: ${{ github.run_number }}
+
+- name: Generate SFCA Report
+  shell: bash
+  run: |
+    node ${{ github.action_path }}/create-sfca-report.js
