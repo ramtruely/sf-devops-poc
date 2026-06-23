@@ -1,0 +1,79 @@
+- name: Upload Changed Files Artifact
+  uses: actions/upload-artifact@v4
+  with:
+    name: changed-files
+    path: changed-files.json
+---
+- name: Generate Changed Files JSON
+  shell: bash
+  run: |
+    node ${{ github.action_path }}/create-changed-files.js
+  env:
+    GITHUB_TOKEN: ${{ github.token }}
+    GITHUB_REPOSITORY: ${{ github.repository }}
+    PR_NUMBER: ${{ github.event.pull_request.number }}
+    PR_TITLE: ${{ github.event.pull_request.title }}
+
+---
+const fs = require("fs");
+const https = require("https");
+
+const repository = process.env.GITHUB_REPOSITORY;
+const prNumber = process.env.PR_NUMBER;
+const token = process.env.GITHUB_TOKEN;
+
+const options = {
+    hostname: "api.github.com",
+    path: `/repos/${repository}/pulls/${prNumber}/files`,
+    method: "GET",
+    headers: {
+        "User-Agent": "GitHubActions",
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/vnd.github+json"
+    }
+};
+
+https.get(options, (res) => {
+
+    let data = "";
+
+    res.on("data", chunk => data += chunk);
+
+    res.on("end", () => {
+
+        const response = JSON.parse(data);
+
+        const json = {
+
+            pullRequest: {
+                number: prNumber,
+                title: process.env.PR_TITLE || ""
+            },
+
+            summary: {
+                totalChangedFiles: response.length
+            },
+
+            changedFiles: response.map(file => ({
+                fileName: file.filename,
+                status: file.status,
+                additions: file.additions,
+                deletions: file.deletions,
+                changes: file.changes
+            }))
+
+        };
+
+        fs.writeFileSync(
+            "changed-files.json",
+            JSON.stringify(json, null, 2)
+        );
+
+        console.log("Generated changed-files.json");
+
+    });
+
+}).on("error", err => {
+    console.error(err);
+    process.exit(1);
+});
