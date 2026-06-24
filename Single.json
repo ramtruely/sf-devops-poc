@@ -1,0 +1,70 @@
+#!/bin/bash
+set -e
+
+echo "Generating sfca-context.json..."
+
+RESPONSE=$(curl -s \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files")
+
+echo "$RESPONSE" | jq '{
+  pullRequest: {
+    number: env.PR_NUMBER,
+    title: env.PR_TITLE
+  },
+  summary: {
+    totalChangedFiles: length
+  },
+  changedFiles: map({
+    fileName: .filename,
+    status: .status,
+    additions: .additions,
+    deletions: .deletions,
+    changes: .changes
+  })
+}' > "${GITHUB_WORKSPACE}/sfca-context.json"
+
+echo "Generated sfca-context.json"
+---
+#!/bin/bash
+set -e
+
+echo "Generating sfca-context.json..."
+
+RESPONSE=$(curl -s \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files")
+
+echo "$RESPONSE" | jq '{
+  pullRequest: {
+    number: env.PR_NUMBER,
+    title: env.PR_TITLE
+  },
+  summary: {
+    totalChangedFiles: length
+  },
+  changedFiles: map({
+    fileName: .filename,
+    status: .status,
+    additions: .additions,
+    deletions: .deletions,
+    changes: .changes
+  })
+}' > "${GITHUB_WORKSPACE}/sfca-context.json"
+
+echo "Generated sfca-context.json"
+
+---
+- name: Generate SFCA Context JSON
+  if: always() && github.event_name == 'pull_request'
+  shell: bash
+  env:
+    GITHUB_TOKEN: ${{ inputs.github-token }}
+    GITHUB_REPOSITORY: ${{ github.repository }}
+    PR_NUMBER: ${{ github.event.pull_request.number }}
+    PR_TITLE: ${{ github.event.pull_request.title }}
+  run: |
+    chmod +x ${{ github.action_path }}/generate-sfca-context.sh
+    ${{ github.action_path }}/generate-sfca-context.sh
