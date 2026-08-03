@@ -1,0 +1,187 @@
+name: DX Visualizer V2
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  dx-visualizer:
+
+    runs-on: ubuntu-latest
+
+    env:
+      TARGET_ORG: CLMDEV
+      SF_AUTH_URL: ${{ secrets.SFDX_AUTH_URL }}
+
+    steps:
+
+      ##########################################################
+      # Checkout
+      ##########################################################
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      ##########################################################
+      # Python
+      ##########################################################
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      ##########################################################
+      # Java
+      ##########################################################
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      ##########################################################
+      # Salesforce CLI
+      ##########################################################
+
+      - name: Install Salesforce CLI
+        run: |
+          npm install -g @salesforce/cli
+          sf version
+
+      ##########################################################
+      # Install Code Analyzer
+      ##########################################################
+
+      - name: Install Code Analyzer
+        run: |
+          echo y | sf plugins install code-analyzer
+          sf plugins
+
+      ##########################################################
+      # jq
+      ##########################################################
+
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      ##########################################################
+      # Login
+      ##########################################################
+
+      - name: Login Salesforce
+        run: |
+          echo "$SF_AUTH_URL" > auth.txt
+
+          sf org login sfdx-url \
+            --sfdx-url-file auth.txt \
+            --alias CLMDEV \
+            --set-default
+
+          rm auth.txt
+
+      ##########################################################
+      # Run Analyzer
+      ##########################################################
+
+      - name: Run Salesforce Code Analyzer
+        run: |
+          mkdir -p output
+
+          sf code-analyzer run \
+            --workspace force-app \
+            --view table \
+            --output-file output/sfca.json \
+            --output-file-format json
+
+      ##########################################################
+      # Analyze Repository
+      ##########################################################
+
+      - name: Analyze Repository
+        run: |
+          chmod +x scripts/common.sh
+          chmod +x scripts/analyze.sh
+
+          ./scripts/analyze.sh
+
+      ##########################################################
+      # Upload Analyzer
+      ##########################################################
+
+      - name: Upload Analyzer
+        run: |
+          chmod +x scripts/upload-analyzer.sh
+
+          ./scripts/upload-analyzer.sh
+
+      ##########################################################
+      # Upload Files
+      ##########################################################
+
+      - name: Upload Files
+        run: |
+          chmod +x scripts/upload-files.sh
+
+          ./scripts/upload-files.sh
+
+      ##########################################################
+      # Upload Violations
+      ##########################################################
+
+      - name: Upload Violations
+        run: |
+          chmod +x scripts/upload-violations.sh
+
+          ./scripts/upload-violations.sh
+
+      ##########################################################
+      # Upload Pull Request
+      ##########################################################
+
+      - name: Upload Pull Request
+        run: |
+          chmod +x scripts/upload-pullrequest.sh
+
+          ./scripts/upload-pullrequest.sh
+
+      ##########################################################
+      # Upload Repository Trend
+      ##########################################################
+
+      - name: Upload Repository Trend
+        run: |
+          chmod +x scripts/upload-trend.sh
+
+          ./scripts/upload-trend.sh
+
+      ##########################################################
+      # Upload Artifacts
+      ##########################################################
+
+      - name: Upload Analyzer JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: analyzer-output
+          path: output/
+
+      ##########################################################
+      # Cleanup
+      ##########################################################
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f auth.txt
