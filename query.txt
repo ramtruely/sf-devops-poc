@@ -1,0 +1,44 @@
+SELECT Id,
+       Name,
+       Repository__c,
+       Branch__c,
+       Coverage__c,
+       Quality_Gate__c,
+       Total_Files__c,
+       Total_Violations__c
+FROM dx_Code_Analyzer__c
+ORDER BY CreatedDate DESC
+LIMIT 5
+-----
+SELECT Name,
+       File_Name__c,
+       File_Path__c,
+       Language__c,
+       Total_Violations__c
+FROM dx_Code_File__c
+LIMIT 10
+
+----
+SELECT Rule__c,
+       Severity__c,
+       Message__c,
+       Status__c
+FROM dx_Code_Violation__c
+LIMIT 10
+------
+SELECT PR_Number__c,
+       PR_Title__c,
+       Status__c
+FROM DX_Pull_Request__c
+LIMIT 5
+
+---
+SELECT Repository__c,
+       Coverage__c,
+       Health_Score__c,
+       Total_Violations__c
+FROM DX_Repository_Trend__c
+LIMIT 5
+
+---
+
