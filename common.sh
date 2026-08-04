@@ -6,7 +6,7 @@ set -euo pipefail
 # Configuration
 ###############################################
 
-TARGET_ORG="${TARGET_ORG:-dxvizdev}"
+TARGET_ORG="${TARGET_ORG:-CLMDEV}"
 OUTPUT_DIR="output"
 
 mkdir -p "${OUTPUT_DIR}"
@@ -49,12 +49,12 @@ login_sf() {
         return
     fi
 
-    if [ -z "${SF_AUTH_URL:-}" ]; then
+    if [ -z "${SFDX_AUTH_URL:-}" ]; then
         log_error "SF_AUTH_URL environment variable not found."
         exit 1
     fi
 
-    echo "${SF_AUTH_URL}" > auth.txt
+    echo "${SFDX_AUTH_URL}" > auth.txt
 
     sf org login sfdx-url \
         --sfdx-url-file auth.txt \
